@@ -16,6 +16,6 @@ creds = Credentials.from_service_account_info(
 )
 
 client = gspread.authorize(creds)
-sheet = client.open("Trade_Journal").worksheet("trades")
+sheet = client.open("repoting").worksheet("Sheet1")
 
 df = pd.DataFrame(sheet.get_all_records())
