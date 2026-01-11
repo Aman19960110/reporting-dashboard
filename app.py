@@ -103,17 +103,78 @@ with col1:
         df_filtered,
         x="Date",
         y="equity",
-        title="Equity Curve"
+        title="📈 Equity Curve",
+        labels={
+            "Date": "Date",
+            "equity": "Equity Value"
+        }
     )
+
+    # Improve hover information
+    fig_eq.update_traces(
+        mode="lines",
+        hovertemplate=
+        "<b>Date:</b> %{x}<br>"
+        "<b>Equity:</b> ₹%{y:,.2f}"
+        "<extra></extra>"
+    )
+
+    # Layout improvements
+    fig_eq.update_layout(
+        xaxis_tickformat="%d-%b-%Y",
+        yaxis_title="Equity (₹)",
+        template="plotly_white",
+        hovermode="x unified",
+        margin=dict(l=20, r=20, t=60, b=20)
+    )
+
+    # Improve line aesthetics
+    fig_eq.update_traces(
+        line=dict(width=2)
+    )
+
+    # Optional: range slider (great for long equity curves)
+    fig_eq.update_xaxes(
+        rangeslider_visible=True,
+        tickangle=-45
+    )
+
     st.plotly_chart(fig_eq, use_container_width=True)
 
-with col2:
-    fig_pie = px.bar(x=df_filtered['Date'],
-                     y=df_filtered['Pnl'],
-                     color=df_filtered['Strategy'],
-                     title='Daily Pnl'
 
+with col2:
+    fig_pie = px.bar(
+        df_filtered,
+        x="Date",
+        y="Pnl",
+        color="Strategy",
+        title="📊 Daily PnL by Strategy",
+        labels={
+            "Date": "Trade Date",
+            "Pnl": "Profit / Loss",
+            "Strategy": "Trading Strategy"
+        },
+        
+        hover_data={
+            "Date": True,
+            "Pnl": ":,.2f",
+            "Strategy": True
+        }
     )
+
+    # Improve layout
+    fig_pie.update_layout(
+        xaxis_tickformat="%d-%b-%Y",
+        yaxis_title="PnL (₹)",
+        legend_title="Strategy",
+        bargap=0.25,
+        hovermode="x unified"
+        
+    )
+
+    # Optional: rotate x-axis labels for readability
+    fig_pie.update_xaxes(tickangle=-45)
+
     st.plotly_chart(fig_pie, use_container_width=True)
 
 mask = df_filtered.groupby(['Strategy','Expiry']).agg({
@@ -259,19 +320,43 @@ fig_stocks_pnl = px.bar(
     y="pnl",
     color="expiry",
     barmode="group",
-    title="Total PnL for Each Stock Across Expiries",
-    text="pnl"
+    title="📊 Total PnL by Stock & Expiry",
+    labels={
+        "stock": "Stock",
+        "pnl": "Total PnL",
+        "expiry": "Expiry"
+    },
+    hover_data={
+        "stock": True,
+        "expiry": True,
+        "pnl": ":,.2f"
+    }
 )
 
-fig_stocks_pnl.update_traces(textposition='outside')
+# Remove bar labels completely
+fig_stocks_pnl.update_traces(text=None)
+
+# Improve hover formatting
+fig_stocks_pnl.update_traces(
+    hovertemplate=
+    "<b>Stock:</b> %{x}<br>"
+    "<b>Expiry:</b> %{legendgroup}<br>"
+    "<b>PnL:</b> ₹%{y:,.2f}"
+    "<extra></extra>"
+)
+
+# Layout improvements
 fig_stocks_pnl.update_layout(
     xaxis_title="Stock",
-    yaxis_title="Total PnL",
+    yaxis_title="PnL (₹)",
     legend_title="Expiry",
-    bargap=0.15,
+    bargap=0.2,
+    template="plotly_white",
+    hovermode="x unified"
 )
 
-st.plotly_chart(fig_stocks_pnl,width='stretch')
+st.plotly_chart(fig_stocks_pnl, use_container_width=True)
+
 
 
 
