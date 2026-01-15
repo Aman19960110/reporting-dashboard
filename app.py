@@ -94,7 +94,7 @@ col3.metric(
     f"{pct_return}%",
     border=True
 )
-
+st.divider()
 # -------------------------------------------------
 # EQUITY CURVE
 # -------------------------------------------------
@@ -179,6 +179,7 @@ used_fund = df_filtered['Tfund used'].iloc[-1]
 used_fund_pct = (used_fund/total_fund)*100
 idle_fund = 100 - used_fund_pct
 
+st.divider()
 
 col1, col2,col3 = st.columns(3)
 
@@ -240,6 +241,7 @@ with col3:
     st.plotly_chart(fig_pie_stock, use_container_width=True)
 
 
+st.divider()
 
 
 
