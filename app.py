@@ -35,7 +35,7 @@ def load_data(sheet='Sheet1'):
     return df
 
 df = load_data()
-stocks_df = load_data('Sheet2')
+
 # -------------------------------------------------
 # DATA CLEANING
 # -------------------------------------------------
@@ -71,22 +71,27 @@ if df_filtered.empty:
     st.warning("No data available for the selected date range")
     st.stop()
 
+grouped_df = df_filtered.groupby('Date')
+
 # -------------------------------------------------
 # KPI SECTION
 # -------------------------------------------------
 col1, col2, col3 = st.columns(3)
+total_fund = pd.to_numeric(df_filtered['Total Fund'].iloc[0])
+total_pnl = pd.to_numeric(df_filtered['Pnl'].sum())
+pct_return = round((total_pnl/(total_fund*10**7))*100,3)
 
-col1.metric("Total PnL", f"₹ {int(df_filtered['Pnl'].sum()):,}", border=True)
+col1.metric("Total Fund", f"₹ {total_fund}Cr", border=True)
 
 col2.metric(
-    "Stock CR Total PnL",
-    f"₹ {int(df_filtered[df_filtered['Strategy'] == 'stocks']['Pnl'].sum()):,}",
+    "PnL",
+    f"₹ {int(df_filtered['Pnl'].sum()):,}",
     border=True
 )
 
 col3.metric(
-    "Index Box Total PnL",
-    f"₹ {int(df_filtered[df_filtered['Strategy'] == 'index']['Pnl'].sum()):,}",
+    "Total Returns",
+    f"{pct_return}%",
     border=True
 )
 
@@ -95,15 +100,14 @@ col3.metric(
 # -------------------------------------------------
 df_filtered = df_filtered.sort_values("Date")
 df_filtered["equity"] = df_filtered["Pnl"].cumsum()
-
+mask_equity = grouped_df['Pnl'].sum()
 col1, col2 = st.columns(2)
 
 with col1:
     fig_eq = px.line(
-        df_filtered,
-        x="Date",
-        y="equity",
-        title="📈 Equity Curve",
+        x=mask_equity.index,
+        y=mask_equity.cumsum(),
+        title=" Equity Curve",
         labels={
             "Date": "Date",
             "equity": "Equity Value"
@@ -122,6 +126,7 @@ with col1:
     # Layout improvements
     fig_eq.update_layout(
         xaxis_tickformat="%d-%b-%Y",
+        xaxis_title = 'Date',
         yaxis_title="Equity (₹)",
         template="plotly_white",
         hovermode="x unified",
@@ -135,7 +140,6 @@ with col1:
 
     # Optional: range slider (great for long equity curves)
     fig_eq.update_xaxes(
-        rangeslider_visible=True,
         tickangle=-45
     )
 
@@ -144,29 +148,16 @@ with col1:
 
 with col2:
     fig_pie = px.bar(
-        df_filtered,
-        x="Date",
-        y="Pnl",
-        color="Strategy",
-        title="📊 Daily PnL by Strategy",
-        labels={
-            "Date": "Trade Date",
-            "Pnl": "Profit / Loss",
-            "Strategy": "Trading Strategy"
-        },
-        
-        hover_data={
-            "Date": True,
-            "Pnl": ":,.2f",
-            "Strategy": True
-        }
+        x=mask_equity.index,
+        y=mask_equity,
+        title=" Daily PnL ",
     )
 
     # Improve layout
     fig_pie.update_layout(
         xaxis_tickformat="%d-%b-%Y",
         yaxis_title="PnL (₹)",
-        legend_title="Strategy",
+        xaxis_title='Date',
         bargap=0.25,
         hovermode="x unified"
         
@@ -177,185 +168,77 @@ with col2:
 
     st.plotly_chart(fig_pie, use_container_width=True)
 
-mask = df_filtered.groupby(['Strategy','Expiry']).agg({
-    'Pnl': "sum",
 
-})
-mask = mask.reset_index()
+mask_fund = df_filtered.groupby(['Expiry','Strategy']).agg({
+    'Fund used': 'sum',
+    'Total Fund': 'first'
+}).reset_index()
 
+
+used_fund = df_filtered['Tfund used'].iloc[-1]
+used_fund_pct = (used_fund/total_fund)*100
+idle_fund = 100 - used_fund_pct
+
+
+col1, col2,col3 = st.columns(3)
 
 with col1:
-    fig_pie_stocks = px.pie(
-        data_frame=mask[mask['Strategy']=='stocks'],
-        values='Pnl',
-        names='Expiry',              # or 'Expiry'
-        hover_data='Expiry',
-        title='PnL Distribution by Expiry (STOCKS)'
+    fig_pie_fund = px.pie(
+        values=[used_fund_pct,idle_fund],
+        names=['Used Fund','Idle Fund'],
+        title="Fund Utilization (%)",
+        hole=0.4
     )
 
 
 
-    fig_pie_stocks.update_traces(
+    fig_pie_fund.update_traces(
         textinfo='percent+label',
-        pull=[0.05] * len(mask)        # optional: separate slices slightly
+        hovertemplate="%{label}: %{percent}",
+        pull=[0.05]       # optional: separate slices slightly
     )
 
-    st.plotly_chart(fig_pie_stocks, use_container_width=True)
+    st.plotly_chart(fig_pie_fund, use_container_width=True)
 
 with col2:
     fig_pie_index = px.pie(
-        data_frame=mask[mask['Strategy']=='index'],
-        values='Pnl',
+        data_frame=mask_fund[mask_fund['Strategy']=='index'],
+        values='Fund used',
         names='Expiry',              # or 'Expiry'
         hover_data='Expiry',
-        title='PnL Distribution by Expiry (INDEX)'
+        hole=0.4,
+        title='Fund Distribution by Expiry (INDEX)'
     )
 
 
 
     fig_pie_index.update_traces(
         textinfo='percent+label',
-        pull=[0.05] * len(mask)        # optional: separate slices slightly
+        pull=[0.05] * len(mask_fund)        # optional: separate slices slightly
     )
 
     st.plotly_chart(fig_pie_index, use_container_width=True)
-###________stocks Data###
-stock_mask = stocks_df['Data'].str.split(',',expand=True)
-print(len(stock_mask.columns))
-stock_mask.columns = ['abc','bce','symbol','cont_typ','expiry','strike','inst_type','inst_name','cef','efd','id','efg','buy_sell','quantity','price','ghi','mod','id_2','hij','datetime','datetime_02','xyz','pqr','stu','tqp']
 
-stocks_df = stock_mask[['symbol','cont_typ','expiry','strike','inst_type','inst_name','id','buy_sell','quantity','price','id_2','datetime','datetime_02']].copy()
-stocks_df['date'] = stocks_df['datetime_02'].str.extract(r'(\d{2} [A-Za-z]{3} \d{4})')
 
-stocks_df['inst_type'] = stocks_df['inst_type'].astype(str).str.strip().str.upper()
-stocks_df['buy_sell'] = pd.to_numeric(stocks_df['buy_sell'], errors='coerce').fillna(0).astype(int)
-stocks_df['quantity'] = pd.to_numeric(stocks_df['quantity'], errors='coerce').fillna(0).astype(int)
-stocks_df['price'] = pd.to_numeric(stocks_df['price'], errors='coerce')
-stocks_df['strike'] = pd.to_numeric(stocks_df['strike'], errors='coerce')
-
-stocks_df['date_str'] = stocks_df['datetime_02'].astype(str).str.extract(r'(\d{1,2}\s+[A-Za-z]{3}\s+\d{4})', expand=False)
-stocks_df['date'] = pd.to_datetime(stocks_df['date_str'], format="%d %b %Y", errors='coerce')
-
-collected_data = []
-for expiry in stocks_df['expiry'].unique():
-  mask1 = stocks_df[stocks_df['expiry']==expiry]
+with col3:
+    fig_pie_stock = px.pie(
+        data_frame=mask_fund[mask_fund['Strategy']=='stocks'],
+        values='Fund used',
+        names='Expiry',              # or 'Expiry'
+        hover_data='Expiry',
+        hole=0.4,
+        title='Fund Distribution by Expiry (Stock)'
+    )
 
 
 
+    fig_pie_stock.update_traces(
+        textinfo='percent+label',
+        pull=[0.05] * len(mask_fund)        # optional: separate slices slightly
+    )
 
+    st.plotly_chart(fig_pie_stock, use_container_width=True)
 
-
-
-  mask = mask1.groupby(['symbol','expiry','inst_type','buy_sell']).agg({
-      'date' : 'first',
-      'strike': 'mean',
-      'quantity':'sum',
-      'price': 'mean',
-
-  }).reset_index()
-
-  stock_list = mask['symbol'].unique()
-  for stock in stock_list:
-      data = mask[mask['symbol'] == stock]
-
-      # Extract net_quantity
-
-
-      # Get all rows where inst_type is 'XX'
-      xx_data = data[data['inst_type'] == 'XX']
-
-      for _, row in xx_data.iterrows():
-          # For each row in xx_data, check the buy_sell condition
-          if row['buy_sell'] == 2:
-              # Calculate parity for 'open' trade
-              parity = round(abs(data[(data['inst_type'] == 'CE') & (data['buy_sell'] == 1)]['price'].iloc[0] -
-                                data[(data['inst_type'] == 'PE') & (data['buy_sell'] == 2)]['price'].iloc[0] -
-                                row['price']) -
-                            data[(data['inst_type'] == 'CE') & (data['buy_sell'] == 1)]['strike'].iloc[0], 2)
-              trade = 'open'
-              net_quantity = data[(data['inst_type'] == 'PE')&(data['buy_sell']==2)]['quantity'].iloc[0]
-              expence = round(((data[(data['inst_type'] == 'CE') & (data['buy_sell'] == 1)]['price'].iloc[0] * 0.00055) +
-                        (data[(data['inst_type'] == 'PE') & (data['buy_sell'] == 2)]['price'].iloc[0] * 0.001625) +
-                        (row['price']*0.00028118)),2)
-              date = data['date'].iloc[0]
-              expiry = data['expiry'].iloc[0]
-          else:
-              # Calculate parity for 'close' trade
-              parity = round(-abs(-data[(data['inst_type'] == 'CE') & (data['buy_sell'] == 2)]['price'].iloc[0] +
-                                  data[(data['inst_type'] == 'PE') & (data['buy_sell'] == 1)]['price'].iloc[0] +
-                                  row['price']) +
-                            data[(data['inst_type'] == 'CE') & (data['buy_sell'] == 2)]['strike'].iloc[0], 2)
-              trade = 'close'
-              net_quantity = data[(data['inst_type'] == 'PE')&(data['buy_sell']==1)]['quantity'].iloc[0]
-              expence = round((data[(data['inst_type'] == 'CE') & (data['buy_sell'] == 2)]['price'].iloc[0]*0.001625) +
-                        (data[(data['inst_type'] == 'PE') & (data['buy_sell'] == 1)]['price'].iloc[0]*0.00055) +
-                        (row['price']*0.00005618),2)
-              date = data['date'].iloc[0]
-              expiry = data['expiry'].iloc[0]
-          # Append the result for each row to the list
-          collected_data.append({
-              'date' : date,
-              'expiry': expiry,
-              'stock': stock,
-              'net_quantity': net_quantity,
-              'trade': trade,
-              'parity': parity,
-              'expence': expence
-          })
-
-# Convert to DataFrame if needed
-collected_data_df = pd.DataFrame(collected_data)
-collected_data_df['pnl'] = (collected_data_df['parity']-collected_data_df['expence'])*collected_data_df['net_quantity']
-
-collected_data_df = collected_data_df[
-    (collected_data_df["date"] >= start_date) &
-    (collected_data_df["date"] <= end_date)
-]
-# Group by stock & expiry if not already aggregated
-df_mask = collected_data_df.groupby(['stock', 'expiry'], as_index=False)['pnl'].sum()
-
-fig_stocks_pnl = px.bar(
-    df_mask,
-    x="stock",
-    y="pnl",
-    color="expiry",
-    barmode="group",
-    title="📊 Total PnL by Stock & Expiry",
-    labels={
-        "stock": "Stock",
-        "pnl": "Total PnL",
-        "expiry": "Expiry"
-    },
-    hover_data={
-        "stock": True,
-        "expiry": True,
-        "pnl": ":,.2f"
-    }
-)
-
-# Remove bar labels completely
-fig_stocks_pnl.update_traces(text=None)
-
-# Improve hover formatting
-fig_stocks_pnl.update_traces(
-    hovertemplate=
-    "<b>Stock:</b> %{x}<br>"
-    "<b>Expiry:</b> %{legendgroup}<br>"
-    "<b>PnL:</b> ₹%{y:,.2f}"
-    "<extra></extra>"
-)
-
-# Layout improvements
-fig_stocks_pnl.update_layout(
-    xaxis_title="Stock",
-    yaxis_title="PnL (₹)",
-    legend_title="Expiry",
-    bargap=0.2,
-    template="plotly_white",
-    hovermode="x unified"
-)
-
-st.plotly_chart(fig_stocks_pnl, use_container_width=True)
 
 
 
