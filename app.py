@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import datetime
 import gspread
 from google.oauth2.service_account import Credentials
 import plotly.express as px
@@ -76,21 +77,32 @@ grouped_df = df_filtered.groupby('Date')
 # -------------------------------------------------
 # KPI SECTION
 # -------------------------------------------------
+today = datetime.date.today().strftime("%d-%b-%Y")
+st.title('PORTFOLIO REPORT ',text_alignment='center')
+st.subheader(f'AS OF {today} ',text_alignment='center')
+st.subheader(' AGILE VENTURES PVT LTD',text_alignment='center')
+
+
+
+
+
+st.divider()
+
 col1, col2, col3 = st.columns(3)
 total_fund = pd.to_numeric(df_filtered['Total Fund'].iloc[0])
 total_pnl = pd.to_numeric(df_filtered['Pnl'].sum())
-pct_return = round((total_pnl/(total_fund*10**7))*100,3)
+pct_return = round((total_pnl/(total_fund*10**7))*100,2)
 
-col1.metric("Total Fund", f"₹ {total_fund}Cr", border=True,)
+col1.metric("TOTAL INVESTEMENT", f"₹ {total_fund}Cr", border=True,)
 
 col2.metric(
-    "PnL",
+    "PNL",
     f"₹ {int(df_filtered['Pnl'].sum()):,}",
     border=True
 )
 
 col3.metric(
-    "Total Returns",
+    "TOTAL RETURN (%)",
     f"{pct_return}%",
     border=True
 )
@@ -107,7 +119,7 @@ with col1:
     fig_eq = px.line(
         x=mask_equity.index,
         y=mask_equity.cumsum(),
-        title=" Equity Curve",
+        title=" EQUITY CURVE ",
         labels={
             "Date": "Date",
             "equity": "Equity Value"
@@ -150,7 +162,7 @@ with col2:
     fig_pie = px.bar(
         x=mask_equity.index,
         y=mask_equity,
-        title=" Daily PnL ",
+        title=" DAILY PNL ",
     )
 
     # Improve layout
@@ -187,7 +199,7 @@ with col1:
     fig_pie_fund = px.pie(
         values=[used_fund_pct,idle_fund],
         names=['Used Fund','Idle Fund'],
-        title="Capital Allocation (%)",
+        title="CAPITAL ALLOCATION (%)",
         hole=0.4
     )
 
@@ -208,7 +220,7 @@ with col2:
         names='Expiry',              # or 'Expiry'
         hover_data='Expiry',
         hole=0.4,
-        title='Capital Distribution across Expiries'
+        title='CAPITAL DISTRIBUTION ACROSS EXPIRIES'
     )
 
 
@@ -228,7 +240,7 @@ with col3:
         names='Strategy',              # or 'Expiry'
         hover_data='Strategy',
         hole=0.4,
-        title='Capital Distribution across Products'
+        title='CAPITAL DISTRIBUTION ACROSS PRODUCTS'
     )
 
 
