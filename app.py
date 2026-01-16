@@ -78,9 +78,10 @@ grouped_df = df_filtered.groupby('Date')
 # KPI SECTION
 # -------------------------------------------------
 today = datetime.date.today().strftime("%d-%b-%Y")
-st.title('PORTFOLIO REPORT ',text_alignment='center')
-st.subheader(f'AS OF {today} ',text_alignment='center')
-st.subheader(' AGILE VENTURES PVT LTD',text_alignment='center')
+st.markdown('''
+            <h1 style="font-family: Larken; text-align: center;">PORTFOLIO REPORT</h1>''', unsafe_allow_html=True)
+st.markdown(f'<h3 style="font-family: Larken; text-align: center;">AS OF {today}</h2>', unsafe_allow_html=True)
+st.markdown('<h2 style="font-family: Larken; text-align: center;">AGILE VENTURES PVT LTD</h3>', unsafe_allow_html=True)
 
 
 
@@ -88,20 +89,68 @@ st.subheader(' AGILE VENTURES PVT LTD',text_alignment='center')
 
 st.divider()
 
-col1, col2, col3 = st.columns(3)
+col1, col2, = st.columns(2)
 total_fund = pd.to_numeric(df_filtered['Total Fund'].iloc[0])
 total_pnl = pd.to_numeric(df_filtered['Pnl'].sum())
+tfund = pd.to_numeric(df_filtered['Tfund used'].iloc[-1])
 pct_return = round((total_pnl/(total_fund*10**7))*100,2)
+df_filtered = df_filtered.sort_values("Date")
+df_filtered["equity"] = df_filtered["Pnl"].cumsum()
 
-col1.metric("TOTAL INVESTEMENT", f"₹ {total_fund}Cr", border=True,)
+mask_fund = df_filtered.groupby(['Expiry','Strategy']).agg({
+    'Fund used': 'sum',
+    'Total Fund': 'first'
+}).reset_index()
 
+
+used_fund = df_filtered['Tfund used'].iloc[-1]
+used_fund_pct = (used_fund/total_fund)*100
+idle_fund = 100 - used_fund_pct
+
+print(used_fund)
+
+with col1:
+        
+    fig_pie_fund = px.pie(
+        values=[used_fund_pct,idle_fund],
+        names=['Used Fund','Idle Fund'],
+        title="CAPITAL ALLOCATION (%)",
+        hole=0.4
+    )
+
+
+
+    fig_pie_fund.update_traces(
+        textinfo='percent+label',
+        hovertemplate="%{label}: %{percent}",
+        pull=[0.05]
+    )
+    fig_pie_fund.update_layout(
+        legend = dict(
+            orientation="h",
+            yanchor="bottom",
+            y=-0.2,
+            xanchor="center",
+            x=0.5   
+        ),
+        title=dict(x=0.38),
+        title_font= dict(size=18,
+                            family='Larken'
+                         )
+
+        )
+    with st.container(border=True):
+        st.plotly_chart(fig_pie_fund, use_container_width=True)
+
+col2.metric("TOTAL CAPITAL", f"₹ {total_fund}Cr", border=True,)
+col2.metric('CAPITAL DEPLOYED', f"₹ {used_fund}Cr", border=True)
 col2.metric(
     "PNL",
     f"₹ {int(df_filtered['Pnl'].sum()):,}",
     border=True
 )
 
-col3.metric(
+col2.metric(
     "TOTAL RETURN (%)",
     f"{pct_return}%",
     border=True
@@ -110,8 +159,7 @@ st.divider()
 # -------------------------------------------------
 # EQUITY CURVE
 # -------------------------------------------------
-df_filtered = df_filtered.sort_values("Date")
-df_filtered["equity"] = df_filtered["Pnl"].cumsum()
+
 mask_equity = grouped_df['Pnl'].sum()
 col1, col2 = st.columns(2)
 
@@ -142,7 +190,10 @@ with col1:
         yaxis_title="Equity (₹)",
         template="plotly_white",
         hovermode="x unified",
-        margin=dict(l=20, r=20, t=60, b=20)
+        margin=dict(l=20, r=20, t=60, b=20),
+        title_font= dict(size=18,
+                            family='Larken'
+                         )
     )
 
     # Improve line aesthetics
@@ -154,8 +205,8 @@ with col1:
     fig_eq.update_xaxes(
         tickangle=-45
     )
-
-    st.plotly_chart(fig_eq, use_container_width=True)
+    with st.container(border=True):
+        st.plotly_chart(fig_eq, use_container_width=True)
 
 
 with col2:
@@ -171,49 +222,26 @@ with col2:
         yaxis_title="PnL (₹)",
         xaxis_title='Date',
         bargap=0.25,
-        hovermode="x unified"
+        hovermode="x unified",
+        title_font= dict(size=18,
+                            family='Larken'
+                         )
         
     )
 
     # Optional: rotate x-axis labels for readability
     fig_pie.update_xaxes(tickangle=-45)
+    with st.container(border=True):
+        st.plotly_chart(fig_pie, use_container_width=True)
 
-    st.plotly_chart(fig_pie, use_container_width=True)
-
-
-mask_fund = df_filtered.groupby(['Expiry','Strategy']).agg({
-    'Fund used': 'sum',
-    'Total Fund': 'first'
-}).reset_index()
-
-
-used_fund = df_filtered['Tfund used'].iloc[-1]
-used_fund_pct = (used_fund/total_fund)*100
-idle_fund = 100 - used_fund_pct
 
 st.divider()
 
-col1, col2,col3 = st.columns(3)
+col1, col2 = st.columns(2)
+
+
 
 with col1:
-    fig_pie_fund = px.pie(
-        values=[used_fund_pct,idle_fund],
-        names=['Used Fund','Idle Fund'],
-        title="CAPITAL ALLOCATION (%)",
-        hole=0.4
-    )
-
-
-
-    fig_pie_fund.update_traces(
-        textinfo='percent+label',
-        hovertemplate="%{label}: %{percent}",
-        pull=[0.05]       # optional: separate slices slightly
-    )
-
-    st.plotly_chart(fig_pie_fund, use_container_width=True)
-
-with col2:
     fig_pie_index = px.pie(
         data_frame=mask_fund,
         values='Fund used',
@@ -230,10 +258,24 @@ with col2:
         pull=[0.05] * len(mask_fund)        # optional: separate slices slightly
     )
 
-    st.plotly_chart(fig_pie_index, use_container_width=True)
+    fig_pie_index.update_layout(
+        legend = dict(
+            orientation="h",
+            yanchor="bottom",
+            y=-0.2,
+            xanchor="center",
+            x=0.5   
+        ),
+        title=dict(x=0.25),
+        title_font= dict(size=18,
+                            family='Larken'
+                         )
+        )
+    with st.container(border=True):
+        st.plotly_chart(fig_pie_index, use_container_width=True)
 
 
-with col3:
+with col2:
     fig_pie_stock = px.pie(
         data_frame=mask_fund,
         values='Fund used',
@@ -249,8 +291,21 @@ with col3:
         textinfo='percent+label',
         pull=[0.05] * len(mask_fund)        # optional: separate slices slightly
     )
-
-    st.plotly_chart(fig_pie_stock, use_container_width=True)
+    fig_pie_stock.update_layout(
+        legend = dict(
+            orientation="h",
+            yanchor="bottom",
+            y=-0.2,
+            xanchor="center",
+            x=0.5   
+        ),
+        title=dict(x=0.25),
+        title_font= dict(size=18,
+                            family='Larken'
+                         )
+        )
+    with st.container(border=True):
+        st.plotly_chart(fig_pie_stock, use_container_width=True)
 
 
 st.divider()
