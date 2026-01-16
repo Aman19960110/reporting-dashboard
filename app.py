@@ -81,7 +81,7 @@ total_fund = pd.to_numeric(df_filtered['Total Fund'].iloc[0])
 total_pnl = pd.to_numeric(df_filtered['Pnl'].sum())
 pct_return = round((total_pnl/(total_fund*10**7))*100,3)
 
-col1.metric("Total Fund", f"₹ {total_fund}Cr", border=True)
+col1.metric("Total Fund", f"₹ {total_fund}Cr", border=True,)
 
 col2.metric(
     "PnL",
@@ -187,7 +187,7 @@ with col1:
     fig_pie_fund = px.pie(
         values=[used_fund_pct,idle_fund],
         names=['Used Fund','Idle Fund'],
-        title="Fund Utilization (%)",
+        title="Capital Allocation (%)",
         hole=0.4
     )
 
@@ -203,12 +203,12 @@ with col1:
 
 with col2:
     fig_pie_index = px.pie(
-        data_frame=mask_fund[mask_fund['Strategy']=='index'],
+        data_frame=mask_fund,
         values='Fund used',
         names='Expiry',              # or 'Expiry'
         hover_data='Expiry',
         hole=0.4,
-        title='Fund Distribution by Expiry (INDEX)'
+        title='Capital Distribution across Expiries'
     )
 
 
@@ -223,12 +223,12 @@ with col2:
 
 with col3:
     fig_pie_stock = px.pie(
-        data_frame=mask_fund[mask_fund['Strategy']=='stocks'],
+        data_frame=mask_fund,
         values='Fund used',
-        names='Expiry',              # or 'Expiry'
-        hover_data='Expiry',
+        names='Strategy',              # or 'Expiry'
+        hover_data='Strategy',
         hole=0.4,
-        title='Fund Distribution by Expiry (Stock)'
+        title='Capital Distribution across Products'
     )
 
 
