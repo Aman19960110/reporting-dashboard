@@ -341,12 +341,13 @@ table_html = mask_table.to_html(index=False, header=False, classes='custom-table
 css = """
 <style>
 .custom-table {
-    width: 50%;
+    width: 50%;   /* <-- add % to match table width */
     margin-left: auto;
     margin-right: auto;
     border-collapse: collapse;
     text-align: center;
     font-family: Larken, sans-serif;
+    font-weight: bold;
 }
 .custom-table td {
     padding: 8px;
@@ -361,11 +362,28 @@ css = """
 """
 
 # Display header and table
-st.markdown(f'<h3 style="font-family: Larken; text-align: center;">NET RETURN REPORT</h3>', unsafe_allow_html=True)
+st.markdown("""
+<h3 style="
+    width: 50%;   /* <-- add % to match table width */
+    margin-left: auto;
+    margin-right: auto;
+    font-size: 18px;
+    font-weight: bold;
+    background-color: #263238;
+    color: white;
+    padding: 12px;
+    text-align: center;
+    font-family: Larken;
+;
+">
+    NET RETURN REPORT
+</h3>
+""", unsafe_allow_html=True)
 st.markdown(css + table_html, unsafe_allow_html=True)
 
 
 st.divider()
+
 
 
 
