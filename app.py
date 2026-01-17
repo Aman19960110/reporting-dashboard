@@ -4,6 +4,8 @@ import datetime
 import gspread
 from google.oauth2.service_account import Credentials
 import plotly.express as px
+import os
+import plotly.io as pio
 
 # -------------------------------------------------
 # PAGE CONFIG
@@ -64,6 +66,8 @@ df_filtered = df[
     (df["Date"] >= start_date) &
     (df["Date"] <= end_date)
 ].dropna(subset=["Pnl"])
+
+
 
 # -------------------------------------------------
 # EMPTY CHECK
@@ -133,7 +137,7 @@ with col1:
             xanchor="center",
             x=0.5   
         ),
-        title=dict(x=0.38),
+        title=dict(x=0.35),
         title_font= dict(size=18,
                             family='Larken'
                          )
@@ -307,9 +311,61 @@ with col2:
     with st.container(border=True):
         st.plotly_chart(fig_pie_stock, use_container_width=True)
 
+st.divider()
+st.sidebar.title('net return table inputs')
+gross_profit = st.sidebar.number_input('gross profit')
+funding_cost = st.sidebar.number_input('funding cost')
+colo_cost = st.sidebar.number_input('colo cost')
+server_cost = st.sidebar.number_input('server cost')
+algo = st.sidebar.number_input('algo cost')
+net_profit = st.sidebar.number_input('net profit')
+net_returns = st.sidebar.number_input('net returns')
+ 
+# Sample DataFrame
+mask_table = pd.DataFrame(
+    [
+        {'Lables': 'Gross Profit','Value':gross_profit},
+        {'Lables': 'MF/Stocks Funding Cost','Value':funding_cost},
+        {'Lables': 'Colo Cost & Hardware Rental','Value':colo_cost},
+        {'Lables': 'Server Cost', 'Value':server_cost},
+        {'Lables': 'Algo Subscription','Value':algo},
+        {'Lables': 'Net Profit','Value':net_profit},
+        {'Lables': 'Net % Return','Value':net_returns},
+    ]
+)
+
+# Convert DataFrame to HTML table without headers
+table_html = mask_table.to_html(index=False, header=False, classes='custom-table')
+
+# Add CSS for styling
+css = """
+<style>
+.custom-table {
+    width: 50%;
+    margin-left: auto;
+    margin-right: auto;
+    border-collapse: collapse;
+    text-align: center;
+    font-family: Larken, sans-serif;
+}
+.custom-table td {
+    padding: 8px;
+}
+.custom-table tr:nth-child(even) {
+    background-color: #F5F5F5;
+}
+.custom-table tr:hover {
+    background-color: #e0f7fa;
+}
+</style>
+"""
+
+# Display header and table
+st.markdown(f'<h3 style="font-family: Larken; text-align: center;">NET RETURN REPORT</h3>', unsafe_allow_html=True)
+st.markdown(css + table_html, unsafe_allow_html=True)
+
 
 st.divider()
-
 
 
 
