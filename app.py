@@ -330,7 +330,7 @@ mask_table = pd.DataFrame(
         {'Lables': 'Server Cost', 'Value':server_cost},
         {'Lables': 'Algo Subscription','Value':algo},
         {'Lables': 'Net Profit','Value':net_profit},
-        {'Lables': 'Net % Return','Value':net_returns},
+        {'Lables': 'Net % Return','Value':f'{net_returns}%'},
     ]
 )
 
