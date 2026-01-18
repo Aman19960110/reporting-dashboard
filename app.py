@@ -341,7 +341,7 @@ table_html = mask_table.to_html(index=False, header=False, classes='custom-table
 css = """
 <style>
 .custom-table {
-    width: 50%;   /* <-- add % to match table width */
+    width: 100%;   /* <-- add % to match table width */
     margin-left: auto;
     margin-right: auto;
     border-collapse: collapse;
@@ -364,7 +364,7 @@ css = """
 # Display header and table
 st.markdown("""
 <h3 style="
-    width: 50%;   /* <-- add % to match table width */
+    width: 100%;   /* <-- add % to match table width */
     margin-left: auto;
     margin-right: auto;
     font-size: 18px;
@@ -376,7 +376,7 @@ st.markdown("""
     font-family: Larken;
 ;
 ">
-    NET RETURN REPORT
+    NET PERFORMANCE AFTER FEES REPORT
 </h3>
 """, unsafe_allow_html=True)
 st.markdown(css + table_html, unsafe_allow_html=True)
